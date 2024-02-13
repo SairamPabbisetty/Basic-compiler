@@ -1,16 +1,40 @@
 
 class Error :
-    def __init__(self, error_name, details) :
+    def __init__(self, pos_start, pos_end, error_name, details) -> None :
+        self.pos_start = pos_start
+        self.pos_end = pos_end 
         self.error_name = error_name
         self.details = details
 
     def as_string(self) :
         result = f'{self.error_name}: {self.details}'
-        return result 
+        result += f'File{self.pos_start.fn}, line {self.pos_start.ln + 1}'
+        return "Error"
 
 class IllegalCharError(Error) :
-    def __init__(self, details) :
-        super().__init__("Illegal Character", details)
+    def __init__(self, pos_start, pos_end, details) -> None :
+        super().__init__(pos_start, pos_end, "Illegal Character", details)
+
+class Position :
+    def __init__(self, idx, ln, col, fname, ftext) -> None :
+        self.idx = idx
+        self.ln = ln
+        self.col = col 
+        self.fname = fname
+        self.ftext = ftext
+    
+    def advance(self, current_char) :
+        self.idx += 1
+        self.col += 1
+
+        if current_char == "\n" :
+            self.ln += 1
+            self.col += 1
+
+        return self
+    
+    def copy(self) :
+        return Position(self.idx, self.ln, self.col, self.ftext, self.fname)
 
 DIGITS = '0123456789'
 
@@ -24,27 +48,28 @@ TT_LPAREN = "LPAREN"
 TT_RPAREN = "RPAREN"
 
 class Token :
-    def __init__(self, type_, value=None) :
+    def __init__(self, type_, value=None) -> None :
         self.type = type_
         self.value = value 
 
-    def __repr__(self) :
+    def __repr__(self) -> str :
         if self.value : 
             return f'{self.type}:{self.value}'
         return f'{self.type}'
 
 class Lexer :
-    def __init__(self, text) :
+    def __init__(self, fname, text) -> None :
+        self.fname = fname 
         self.text = text
-        self.position = -1
+        self.position = Position(-1, 0, -1, fname, text)
         self.current_char = None
 
         self.advance()
 
     def advance(self) :
-        self.position += 1
-        if (self.position < len(self.text)) :
-            self.current_char = self.text[self.position]
+        self.position.advance(self.current_char)
+        if (self.position.idx < len(self.text)) :
+            self.current_char = self.text[self.position.idx]
         else :
             self.current_char = None 
 
@@ -76,9 +101,10 @@ class Lexer :
                 tokens.append(Token(TT_RPAREN))
                 self.advance()
             else :
+                pos_start = self.position.copy()
                 char = self.current_char
                 self.advance()
-                return [], IllegalCharError("'" + char + "'")
+                return [], IllegalCharError(pos_start, self.position, "'" + char + "'")
 
         return tokens, None
 
@@ -100,9 +126,25 @@ class Lexer :
             return Token(TT_INT, int(number))
         else :
             return Token(TT_FLOAT, float(number))
+        
+class NumberToken :
+    def __init__(self, tok) -> None:
+        self.tok = tok 
+    
+    def __repr__(self) -> str:
+        return f'{self.tok}'
+    
+class BinOpNode :
+    def __init__(self, left_node, op_tok, right_node) -> None:
+        self.left_node = left_node
+        self.op_tok = op_tok
+        self.right_node = right_node
+    
+    def __repr__(self) -> str:
+        return f'({self.left_node}, {self.op_tok}, {self.right_node})'
 
-def run(text) :
-    lexer = Lexer(text)
+def run(fname, text) :
+    lexer = Lexer(fname, text)
     tokens, error = lexer.make_tokens()
 
     return tokens, error
