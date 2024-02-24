@@ -7,11 +7,15 @@ class Parser :
     def factor(self) : 
         if self.token.type == "INT" or self.token.type == "FLOAT" : 
             return self.token
+        elif self.token.value == "(" :
+            self.move()
+            expression = self.expression()
+            return expression
         
     def term(self) :
         left_node = self.factor()
         self.move()
-        while self.token.type == "*" or self.token.type == "/" :
+        while self.token.value == "*" or self.token.value == "/" :
             operation = self.token
             self.move()
             right_node = self.factor()
@@ -22,7 +26,7 @@ class Parser :
     
     def expression(self) :
         left_node = self.term()
-        while self.token.type == "+" or self.token.type == "-" :
+        while self.token.value == "+" or self.token.value == "-" :
             operation = self.token
             self.move()
             right_node = self.term()

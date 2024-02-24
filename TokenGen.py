@@ -1,24 +1,7 @@
+from tokens import Float, Integer, Operator, Token
 
 DIGITS = '0123456789'
-
-TT_INT = "INT"
-TT_FLOAT = "FLOAT"
-TT_PLUS = "+"
-TT_MINUS = "-"
-TT_MUL = "*"
-TT_DIV = "/"
-TT_LPAREN = "("
-TT_RPAREN = ")"
-
-class Token :
-    def __init__(self, type_, value=None) -> None :
-        self.type = type_
-        self.value = value 
-
-    def __repr__(self) -> str :
-        if self.value : 
-            return f'{self.value}'
-        return f'{self.type}'
+OPERATORS = "+-*/()"
 
 class Lexer :
     def __init__(self, fname, text) -> None :
@@ -38,30 +21,15 @@ class Lexer :
 
     def make_tokens(self) :
         tokens = []
-
+        token = self.current_char
         while self.current_char != None :
             if self.current_char in ' \t' :
                 self.advance()
             elif self.current_char in DIGITS :
                 tokens.append(self.make_number())
                 self.advance()
-            elif self.current_char == '+' :
-                tokens.append(Token(TT_PLUS))
-                self.advance()
-            elif self.current_char == '-' :
-                tokens.append(Token(TT_MINUS))
-                self.advance()
-            elif self.current_char == '*' :
-                tokens.append(Token(TT_MUL))
-                self.advance()
-            elif self.current_char == '/' :
-                tokens.append(Token(TT_DIV))
-                self.advance()
-            elif self.current_char == '(' :
-                tokens.append(Token(TT_LPAREN))
-                self.advance()
-            elif self.current_char == ')' :
-                tokens.append(Token(TT_RPAREN))
+            elif self.current_char in OPERATORS :
+                tokens.append(Operator(self.current_char))
                 self.advance()
             else :
                 self.advance()
@@ -84,9 +52,9 @@ class Lexer :
             self.advance()
 
         if dot_count == 0 :
-            return Token(TT_INT, int(number))
+            return Integer(int(number))
         else :
-            return Token(TT_FLOAT, float(number))
+            return Float(float(number))
 
 def run(fname, text) :
     lexer = Lexer(fname, text)
